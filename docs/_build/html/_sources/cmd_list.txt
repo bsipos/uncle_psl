@@ -1,0 +1,15 @@
+
+.. _command_line_tools:
+
+Command line tools
+==================
+
+.. __template_script:
+
+_template_script
+----------------
+
+.. argparse::
+   :ref: scripts._template_script.parser
+   :prog: _template_script
+

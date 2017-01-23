@@ -1,0 +1,29 @@
+pypackage_boilerplate package
+=============================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pypackage_boilerplate.tests
+
+Submodules
+----------
+
+pypackage_boilerplate.pypackage_boilerplate module
+--------------------------------------------------
+
+.. automodule:: pypackage_boilerplate.pypackage_boilerplate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pypackage_boilerplate
+    :members:
+    :undoc-members:
+    :show-inheritance:
