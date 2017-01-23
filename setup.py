@@ -16,7 +16,7 @@ test_requirements = [
 ]
 
 setup(
-    name='uncle_psl',
+    name='uncle_PSL',
     version='0.1.0',
     description="A BLAT to SAM converter.",
     long_description=readme,
@@ -24,14 +24,14 @@ setup(
     author_email='Botond.Sipos@nanoporetech.com',
     url='',
     packages=[
-        'uncle_psl',
+        'uncle_PSL',
     ],
-    package_dir={'uncle_psl':
-                 'uncle_psl'},
+    package_dir={'uncle_PSL':
+                 'uncle_PSL'},
     include_package_data=True,
     install_requires=requirements,
     zip_safe=False,
-    keywords='uncle_psl',
+    keywords='uncle_PSL',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

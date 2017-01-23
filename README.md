@@ -34,7 +34,7 @@ Issue `make help` to get a list of `make` targets.
 Documentation
 -------------
 
-Documentation can be found at: https://bsipos.git.oxfordnanolabs.local/unlce_psl
+Documentation can be found at: https://bsipos.git.oxfordnanolabs.local/unlce_PSL
 
 Contributing
 ------------

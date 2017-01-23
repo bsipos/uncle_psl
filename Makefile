@@ -1,4 +1,4 @@
-MODULE=uncle_psl
+MODULE=uncle_PSL
 
 .PHONY: clean clean-test clean-pyc clean-build docs com help 
 
