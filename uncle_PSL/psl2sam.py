@@ -3,6 +3,8 @@
 from collections import OrderedDict
 import itertools
 
+from uncle_PSL.sam_writer import SamWriter
+
 def _prepare_psl_dict():
     fields_text = """matches
 misMatches
@@ -32,9 +34,8 @@ tStarts"""
     return fields_dict
 
 
-def _iter_fields(fname, nr_fields=21):
-    fh = open(fname, 'r')
-    for line in fh:
+def _iter_fields(handle, nr_fields=21):
+    for line in handle:
         fields = line.split()
         if len(fields) != nr_fields:
             continue
@@ -78,7 +79,7 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     return cigar
 
 
-def psl_rec2sam_rec(psl):
+def psl_rec2sam_rec(psl, sam_writer):
     # Figure out strand:
     if len(psl['strand']) != 2:
         raise Exception('Invalid strand field in record: {}'.format(ps['qName']))
@@ -113,9 +114,10 @@ def psl_rec2sam_rec(psl):
     cigar = _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd)
     print cigar
 
-def psl2sam(psl_file):
-    for fields in _iter_fields(psl_file):
+def psl2sam(psl_handle, out_handle, reads, soft_clip):
+    sam_writer = SamWriter(out_handle)
+    for fields in _iter_fields(psl_handle):
         psl_fields = _prepare_psl_dict()
         for pos, key in enumerate(psl_fields.keys()):
             psl_fields[key] = fields[pos]
-        psl_rec2sam_rec(psl_fields)
+        psl_rec2sam_rec(psl_fields, sam_writer)

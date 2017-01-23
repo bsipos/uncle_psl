@@ -11,7 +11,7 @@ class SamWriter:
         """ Initialise SAM writer object """
         self.out_file = out_file
         self.header = header
-        self.out_handler = open(out_file, 'w')
+        self.out_handler = out_file
         if header is not None:
             self._write_header()
 
