@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
+
+# Reference on the PSL format: http://www.ensembl.org/info/website/upload/psl.html
+# Reference on the SAM format: https://samtools.github.io/hts-specs/SAMv1.pdf
+
 from collections import OrderedDict
 import itertools
 
 from uncle_PSL.sam_writer import SamWriter
+from uncle_PSL.seq_util import reverse_complement
+
 
 def _prepare_psl_dict():
     fields_text = """matches
@@ -42,13 +48,15 @@ def _iter_fields(handle, nr_fields=21):
         yield fields
 
 
-def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd):
+def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip):
     # Construct the CIGAR string, here we go:
     cigar = []
+    indels = 0
+    clip_op = 'S' if soft_clip else 'H'
 
     # 5' hard clipping:
     if qStart != 0:
-        cigar.append("{}H".format(qStart))
+        cigar.append("{}{}".format(qStart, clip_op))
     # Process alignment segments:
     bs = blockSizes[0]
     qs = qStarts[0]
@@ -66,6 +74,8 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
         # Add deletion:
         if deletion != 0:
             cigar.append("{}D".format(deletion))
+        indels += deletion
+        indels += insertion
         # NM?
         # Advance to next block:
         bs, qs, ts = blockSizes[i], qStarts[i], tStarts[i]
@@ -74,12 +84,13 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     # Deal with 3' clipping:
     three_clip = qSize - qEnd
     if three_clip != 0:
-        cigar.append("{}H".format(three_clip))
+        cigar.append("{}{}".format(three_clip, clip_op))
+    # CIGAR complete:
     cigar = ''.join(cigar)
-    return cigar
+    return cigar, indels
 
 
-def psl_rec2sam_rec(psl, sam_writer):
+def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip):
     # Figure out strand:
     if len(psl['strand']) != 2:
         raise Exception('Invalid strand field in record: {}'.format(ps['qName']))
@@ -111,8 +122,22 @@ def psl_rec2sam_rec(psl, sam_writer):
             tStarts[i] = tSize - blockSizes[i] - tStarts[i]
 
     # Generate CIGAR:
-    cigar = _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd)
-    print cigar
+    cigar, indels = _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip)
+    NM = indels + int(psl['misMatches']) + int(psl['nCount'])
+
+    # Construct SAM record:
+    flag = 0 if strand == '+' else 16 # Strand flag
+    # Construct sequence:
+    seq = '*'
+    if reads is not None and psl['qName'] in reads:
+        seq = str(reads[psl['qName']].seq)
+        if strand == '-':
+            seq = reverse_complement(seq)
+    # Deal with hard clipping:
+    sam = sam_writer.new_sam_record(qname=psl['qName'], flag=flag, rname=psl['tName'], pos=int(psl['tStart'])+1,
+            mapq=0, cigar=cigar, rnext='*', pnext=0, tlen=0, seq=seq, qual='*', tags='NM:i:{}'.format(NM))
+    return sam
+
 
 def psl2sam(psl_handle, out_handle, reads, soft_clip):
     sam_writer = SamWriter(out_handle)
@@ -120,4 +145,5 @@ def psl2sam(psl_handle, out_handle, reads, soft_clip):
         psl_fields = _prepare_psl_dict()
         for pos, key in enumerate(psl_fields.keys()):
             psl_fields[key] = fields[pos]
-        psl_rec2sam_rec(psl_fields, sam_writer)
+        sam_rec = psl_rec2sam_rec(psl_fields, sam_writer, reads, soft_clip)
+        sam_writer.write(sam_rec)

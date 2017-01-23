@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-f', metavar='reads_fasta', type=str, help="Reads in fasta format.", required=False, default=None)
 parser.add_argument(
-    '-s', action="store_true", help="Use soft clipping instead of hard clipping.", default=False)
+    '-H', action="store_false", help="Use hard clipping instead of soft clipping.", default=True)
 parser.add_argument('infile', nargs='?', help='Input PSL (default: stdin).',
                     type=argparse.FileType('r'), default=sys.stdin)
 parser.add_argument('outfile', nargs='?', help='Output SAM (default: stdout)',
@@ -31,4 +31,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     reads =  SeqIO.to_dict(SeqIO.parse(args.f, 'fasta')) if args.f is not None else None
-    psl2sam.psl2sam(args.infile, args.outfile, reads, args.s)
+    psl2sam.psl2sam(args.infile, args.outfile, reads, args.H)
