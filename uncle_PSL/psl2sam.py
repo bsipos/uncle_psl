@@ -12,6 +12,7 @@ from uncle_PSL.seq_util import reverse_complement
 
 
 def _prepare_psl_dict():
+    """ Create and empty structure to hold PSL records. """
     fields_text = """matches
 misMatches
 repMatches
@@ -41,6 +42,7 @@ tStarts"""
 
 
 def _iter_fields(handle, nr_fields=21):
+    """ Iterate over lines in PSL file. """
     for line in handle:
         fields = line.split()
         if len(fields) != nr_fields:
@@ -49,6 +51,7 @@ def _iter_fields(handle, nr_fields=21):
 
 
 def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, strand, soft_clip=True, n_limit=None):
+    """ Construct CIGAR string from PSL record information. See the psl_rec2sam_rec function for the arguments. """
     # Construct the CIGAR string, here we go:
     cigar = []
     indels = 0
@@ -93,6 +96,7 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
 
 
 def _extract_segment_info(psl, qSize, tSize):
+    """ Extract and process aligned segment information. """
     # Extract segement information:
     blockCount = int(psl['blockCount'])
     blockSizes = [int(bs) for bs in psl['blockSizes'].split(',') if len(bs) > 0]
@@ -112,6 +116,16 @@ def _extract_segment_info(psl, qSize, tSize):
 
 
 def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
+    """ Convert PSL record to SAM record.
+
+    :param psl: OrderedDict with PSL records.
+    :param sam_writer: SamWriter object.
+    :param reads: Input reads as dictionary of SeqRecord objects.
+    :param soft_clip: Soft clip if true.
+    :param n_limit: Deletion size limit for using N operation.
+    :returns: SAM record.
+    :rtype: OrderedDict.
+    """
     # Figure out strand:
     if len(psl['strand']) == 1:
         strand = psl['strand']  # Not sure if this is sane!
@@ -164,6 +178,15 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
 
 
 def psl2sam(psl_handle, out_handle, reads, soft_clip=True, n_limit=None):
+    """ Convert PSL data (BLAT output) into SAM format.
+
+    :param psl_handle: File handle for reading PSL data.
+    :param out_handle: File handle to write SAM output.
+    :param reads: Input reads as dictionary of SeqRecord objects.
+    :param soft_clip: Soft clip if true.
+    :param n_limit: Deletion size limit for using N operation.
+    :returns: None
+    """
     # Create SamWriter object:
     sam_writer = SamWriter(out_handle)
     # Iterate PSL records:
