@@ -83,7 +83,7 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     cigar.append("{}M".format(bs))
     # 5' hard clipping:
     if qStart != 0:
-        cigar.insert(0,"{}{}".format(qStart, clip_op))
+        cigar.insert(0, "{}{}".format(qStart, clip_op))
     # Deal with 3' clipping:
     three_clip = qSize - qEnd
     if three_clip != 0:
@@ -91,7 +91,8 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     # CIGAR complete:
     return cigar, indels
 
-def _extract_segment_info(psl):
+
+def _extract_segment_info(psl, qSize, tSize):
     # Extract segement information:
     blockCount = int(psl['blockCount'])
     blockSizes = [int(bs) for bs in psl['blockSizes'].split(',') if len(bs) > 0]
@@ -114,7 +115,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
     # Figure out strand:
     if len(psl['strand']) == 1:
         strand = psl['strand']  # Not sure if this is sane!
-        psl['strand'] = psl['strand'] + '+' # Assume +
+        psl['strand'] = psl['strand'] + '+'  # Assume +
     if len(psl['strand']) == 2:
         strand = '+' if all(x == list(psl['strand'])[0] for x in list(psl['strand'])) else '-'
     else:
@@ -131,7 +132,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
         qEnd = qSize - int(psl['qStart'])
 
     # Extract segement information:
-    blockCount, blockSizes, qStarts, tStarts = _extract_segment_info(psl)
+    blockCount, blockSizes, qStarts, tStarts = _extract_segment_info(psl, qSize, tSize)
 
     # Generate CIGAR:
     cigar, indels = _generate_cigar(
