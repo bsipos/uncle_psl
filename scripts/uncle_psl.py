@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# (c) 2016 Oxford Nanopore Technologies Ltd.
+
 import argparse
 from collections import OrderedDict
 import itertools
@@ -30,5 +36,5 @@ parser.add_argument('outfile', nargs='?', help='Output SAM (default: stdout)',
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    reads =  SeqIO.to_dict(SeqIO.parse(args.f, 'fasta')) if args.f is not None else None
+    reads = SeqIO.to_dict(SeqIO.parse(args.f, 'fasta')) if args.f is not None else None
     psl2sam.psl2sam(args.infile, args.outfile, reads, args.H, args.N)

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+# (c) 2016 Oxford Nanopore Technologies Ltd.
 
 # Reference on the PSL format: http://www.ensembl.org/info/website/upload/psl.html
 # Reference on the SAM format: https://samtools.github.io/hts-specs/SAMv1.pdf
