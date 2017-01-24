@@ -96,7 +96,7 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
 def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
     # Figure out strand:
     if len(psl['strand']) != 2:
-        raise Exception('Invalid strand field in record: {}'.format(ps['qName']))
+        raise Exception('Invalid strand field in record: {}'.format(psl['qName']))
     strand = '+' if all(x == list(psl['strand'])[0] for x in list(psl['strand'])) else '-'
 
     # Type conversion of coordinates:
