@@ -1,7 +1,0 @@
-pypackage_boilerplate
-=====================
-
-.. toctree::
-   :maxdepth: 4
-
-   pypackage_boilerplate
