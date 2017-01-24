@@ -1,0 +1,45 @@
+uncle_PSL package
+=================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    uncle_PSL.tests
+
+Submodules
+----------
+
+uncle_PSL.psl2sam module
+------------------------
+
+.. automodule:: uncle_PSL.psl2sam
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+uncle_PSL.sam_writer module
+---------------------------
+
+.. automodule:: uncle_PSL.sam_writer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+uncle_PSL.seq_util module
+-------------------------
+
+.. automodule:: uncle_PSL.seq_util
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: uncle_PSL
+    :members:
+    :undoc-members:
+    :show-inheritance:

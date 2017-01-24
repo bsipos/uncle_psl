@@ -1,0 +1,402 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>uncle_PSL.psl2sam &mdash; Python Boilerplate 0.1.0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="Python Boilerplate 0.1.0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> Python Boilerplate
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../cmd_list.html">Command line tools</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">uncle_PSL</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">Python Boilerplate</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>uncle_PSL.psl2sam</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for uncle_PSL.psl2sam</h1><div class="highlight"><pre>
+<span class="c"># -*- coding: utf-8 -*-</span>
+
+<span class="c"># This Source Code Form is subject to the terms of the Mozilla Public</span>
+<span class="c"># License, v. 2.0. If a copy of the MPL was not distributed with this</span>
+<span class="c"># file, You can obtain one at http://mozilla.org/MPL/2.0/.</span>
+
+<span class="c"># (c) 2016 Oxford Nanopore Technologies Ltd.</span>
+
+<span class="c"># Reference on the PSL format: http://www.ensembl.org/info/website/upload/psl.html</span>
+<span class="c"># Reference on the SAM format: https://samtools.github.io/hts-specs/SAMv1.pdf</span>
+
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+
+<span class="kn">from</span> <span class="nn">uncle_PSL.sam_writer</span> <span class="k">import</span> <span class="n">SamWriter</span>
+<span class="kn">from</span> <span class="nn">uncle_PSL.seq_util</span> <span class="k">import</span> <span class="n">reverse_complement</span>
+
+
+<span class="k">def</span> <span class="nf">_prepare_psl_dict</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Create and empty structure to hold PSL records. &quot;&quot;&quot;</span>
+    <span class="n">fields_text</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;matches</span>
+<span class="s">misMatches</span>
+<span class="s">repMatches</span>
+<span class="s">nCount</span>
+<span class="s">qNumInsert</span>
+<span class="s">qBaseInsert</span>
+<span class="s">tNumInsert</span>
+<span class="s">tBaseInsert</span>
+<span class="s">strand</span>
+<span class="s">qName</span>
+<span class="s">qSize</span>
+<span class="s">qStart</span>
+<span class="s">qEnd</span>
+<span class="s">tName</span>
+<span class="s">tSize</span>
+<span class="s">tStart</span>
+<span class="s">tEnd</span>
+<span class="s">blockCount</span>
+<span class="s">blockSizes</span>
+<span class="s">qStarts</span>
+<span class="s">tStarts&quot;&quot;&quot;</span>
+    <span class="n">fields</span> <span class="o">=</span> <span class="n">fields_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+    <span class="n">fields_dict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
+        <span class="n">fields_dict</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="k">None</span>
+    <span class="k">return</span> <span class="n">fields_dict</span>
+
+
+<span class="k">def</span> <span class="nf">_iter_fields</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">nr_fields</span><span class="o">=</span><span class="mi">21</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Iterate over lines in PSL file. &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">!=</span> <span class="n">nr_fields</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">yield</span> <span class="n">fields</span>
+
+
+<span class="k">def</span> <span class="nf">_generate_cigar</span><span class="p">(</span><span class="n">qStart</span><span class="p">,</span> <span class="n">blockSizes</span><span class="p">,</span> <span class="n">qStarts</span><span class="p">,</span> <span class="n">tStarts</span><span class="p">,</span> <span class="n">blockCount</span><span class="p">,</span> <span class="n">qSize</span><span class="p">,</span> <span class="n">qEnd</span><span class="p">,</span> <span class="n">strand</span><span class="p">,</span> <span class="n">soft_clip</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">n_limit</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Construct CIGAR string from PSL record information. See the psl_rec2sam_rec function for the arguments. &quot;&quot;&quot;</span>
+    <span class="c"># Construct the CIGAR string, here we go:</span>
+    <span class="n">cigar</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">indels</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">clip_op</span> <span class="o">=</span> <span class="s">&#39;S&#39;</span> <span class="k">if</span> <span class="n">soft_clip</span> <span class="k">else</span> <span class="s">&#39;H&#39;</span>
+
+    <span class="c"># Process alignment segments:</span>
+    <span class="n">bs</span> <span class="o">=</span> <span class="n">blockSizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">qs</span> <span class="o">=</span> <span class="n">qStarts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">tStarts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">blockCount</span><span class="p">):</span>  <span class="c"># process block by block, start from 2nd block</span>
+        <span class="c"># Gap between query blocks:</span>
+        <span class="n">insertion</span> <span class="o">=</span> <span class="n">qStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">qStarts</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bs</span>
+        <span class="c"># Gap between target blocks:</span>
+        <span class="n">deletion</span> <span class="o">=</span> <span class="n">tStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">tStarts</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">bs</span>
+        <span class="c"># Add block to cigar as match:</span>
+        <span class="n">cigar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;{}M&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bs</span><span class="p">))</span>
+        <span class="c"># Add inserion:</span>
+        <span class="k">if</span> <span class="n">insertion</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">cigar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;{}I&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">insertion</span><span class="p">))</span>
+        <span class="c"># Add deletion:</span>
+        <span class="k">if</span> <span class="n">deletion</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">del_op</span> <span class="o">=</span> <span class="s">&#39;D&#39;</span>
+            <span class="c"># Use N operation if deleltion is larger than limit:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">n_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">deletion</span> <span class="o">&gt;=</span> <span class="n">n_limit</span><span class="p">):</span>
+                <span class="n">del_op</span> <span class="o">=</span> <span class="s">&#39;N&#39;</span>
+            <span class="n">cigar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">deletion</span><span class="p">,</span> <span class="n">del_op</span><span class="p">))</span>
+        <span class="n">indels</span> <span class="o">+=</span> <span class="n">deletion</span>
+        <span class="n">indels</span> <span class="o">+=</span> <span class="n">insertion</span>
+        <span class="c"># Advance to next block:</span>
+        <span class="n">bs</span><span class="p">,</span> <span class="n">qs</span><span class="p">,</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">blockSizes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">qStarts</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">tStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="c"># Add last block:</span>
+    <span class="n">cigar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;{}M&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bs</span><span class="p">))</span>
+    <span class="c"># 5&#39; hard clipping:</span>
+    <span class="k">if</span> <span class="n">qStart</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">cigar</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">qStart</span><span class="p">,</span> <span class="n">clip_op</span><span class="p">))</span>
+    <span class="c"># Deal with 3&#39; clipping:</span>
+    <span class="n">three_clip</span> <span class="o">=</span> <span class="n">qSize</span> <span class="o">-</span> <span class="n">qEnd</span>
+    <span class="k">if</span> <span class="n">three_clip</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">cigar</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;{}{}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">three_clip</span><span class="p">,</span> <span class="n">clip_op</span><span class="p">))</span>
+    <span class="c"># CIGAR complete:</span>
+    <span class="k">return</span> <span class="n">cigar</span><span class="p">,</span> <span class="n">indels</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_segment_info</span><span class="p">(</span><span class="n">psl</span><span class="p">,</span> <span class="n">qSize</span><span class="p">,</span> <span class="n">tSize</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Extract and process aligned segment information. &quot;&quot;&quot;</span>
+    <span class="c"># Extract segement information:</span>
+    <span class="n">blockCount</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;blockCount&#39;</span><span class="p">])</span>
+    <span class="n">blockSizes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="k">for</span> <span class="n">bs</span> <span class="ow">in</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;blockSizes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">qStarts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span> <span class="k">for</span> <span class="n">qs</span> <span class="ow">in</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;qStarts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">qs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">tStarts</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;tStarts&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="c"># Reverse and transform segment information if strand is &#39;-&#39;:</span>
+    <span class="k">if</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+        <span class="n">blockSizes</span> <span class="o">=</span> <span class="n">blockSizes</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">qStarts</span> <span class="o">=</span> <span class="n">qStarts</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">tStarts</span> <span class="o">=</span> <span class="n">tStarts</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">xrange</span><span class="p">(</span><span class="n">blockCount</span><span class="p">):</span>
+            <span class="n">qStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">qSize</span> <span class="o">-</span> <span class="n">blockSizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">qStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">tStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">tSize</span> <span class="o">-</span> <span class="n">blockSizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">tStarts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">blockCount</span><span class="p">,</span> <span class="n">blockSizes</span><span class="p">,</span> <span class="n">qStarts</span><span class="p">,</span> <span class="n">tStarts</span>
+
+
+<div class="viewcode-block" id="psl_rec2sam_rec"><a class="viewcode-back" href="../../uncle_PSL.html#uncle_PSL.psl2sam.psl_rec2sam_rec">[docs]</a><span class="k">def</span> <span class="nf">psl_rec2sam_rec</span><span class="p">(</span><span class="n">psl</span><span class="p">,</span> <span class="n">sam_writer</span><span class="p">,</span> <span class="n">reads</span><span class="p">,</span> <span class="n">soft_clip</span><span class="p">,</span> <span class="n">n_limit</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Convert PSL record to SAM record.</span>
+
+<span class="sd">    :param psl: OrderedDict with PSL records.</span>
+<span class="sd">    :param sam_writer: SamWriter object.</span>
+<span class="sd">    :param reads: Input reads as dictionary of SeqRecord objects.</span>
+<span class="sd">    :param soft_clip: Soft clip if true.</span>
+<span class="sd">    :param n_limit: Deletion size limit for using N operation.</span>
+<span class="sd">    :returns: SAM record.</span>
+<span class="sd">    :rtype: OrderedDict.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Figure out strand:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">strand</span> <span class="o">=</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">]</span>  <span class="c"># Not sure if this is sane!</span>
+        <span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;+&#39;</span>  <span class="c"># Assume +</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">strand</span> <span class="o">=</span> <span class="s">&#39;+&#39;</span> <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;strand&#39;</span><span class="p">]))</span> <span class="k">else</span> <span class="s">&#39;-&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s">&#39;Invalid strand field in record: {}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qName&#39;</span><span class="p">]))</span>
+
+    <span class="c"># Type conversion of coordinates:</span>
+    <span class="n">qStart</span><span class="p">,</span> <span class="n">qEnd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qStart&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qEnd&#39;</span><span class="p">])</span>
+    <span class="n">tStart</span><span class="p">,</span> <span class="n">tEnd</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;tStart&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;tEnd&#39;</span><span class="p">])</span>
+    <span class="n">qSize</span><span class="p">,</span> <span class="n">tSize</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qSize&#39;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;tSize&#39;</span><span class="p">])</span>
+
+    <span class="c"># Transform start and end coordinates if strand is &#39;-&#39;:</span>
+    <span class="k">if</span> <span class="n">strand</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+        <span class="n">qStart</span> <span class="o">=</span> <span class="n">qSize</span> <span class="o">-</span> <span class="n">qEnd</span>
+        <span class="n">qEnd</span> <span class="o">=</span> <span class="n">qSize</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qStart&#39;</span><span class="p">])</span>
+
+    <span class="c"># Extract segement information:</span>
+    <span class="n">blockCount</span><span class="p">,</span> <span class="n">blockSizes</span><span class="p">,</span> <span class="n">qStarts</span><span class="p">,</span> <span class="n">tStarts</span> <span class="o">=</span> <span class="n">_extract_segment_info</span><span class="p">(</span><span class="n">psl</span><span class="p">,</span> <span class="n">qSize</span><span class="p">,</span> <span class="n">tSize</span><span class="p">)</span>
+
+    <span class="c"># Generate CIGAR:</span>
+    <span class="n">cigar</span><span class="p">,</span> <span class="n">indels</span> <span class="o">=</span> <span class="n">_generate_cigar</span><span class="p">(</span>
+        <span class="n">qStart</span><span class="p">,</span> <span class="n">blockSizes</span><span class="p">,</span> <span class="n">qStarts</span><span class="p">,</span> <span class="n">tStarts</span><span class="p">,</span> <span class="n">blockCount</span><span class="p">,</span> <span class="n">qSize</span><span class="p">,</span> <span class="n">qEnd</span><span class="p">,</span> <span class="n">strand</span><span class="p">,</span> <span class="n">soft_clip</span><span class="p">,</span> <span class="n">n_limit</span><span class="p">)</span>
+    <span class="n">cigar_string</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cigar</span><span class="p">)</span>
+    <span class="n">NM</span> <span class="o">=</span> <span class="n">indels</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;misMatches&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;nCount&#39;</span><span class="p">])</span>
+
+    <span class="c"># Construct SAM record:</span>
+    <span class="n">flag</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">strand</span> <span class="o">==</span> <span class="s">&#39;+&#39;</span> <span class="k">else</span> <span class="mi">16</span>  <span class="c"># Strand flag</span>
+    <span class="c"># Construct sequence:</span>
+    <span class="n">seq</span> <span class="o">=</span> <span class="s">&#39;*&#39;</span>
+    <span class="k">if</span> <span class="n">reads</span> <span class="ow">is</span> <span class="ow">not</span> <span class="k">None</span> <span class="ow">and</span> <span class="n">psl</span><span class="p">[</span><span class="s">&#39;qName&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">reads</span><span class="p">:</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">reads</span><span class="p">[</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qName&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">seq</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">strand</span> <span class="o">==</span> <span class="s">&#39;-&#39;</span><span class="p">:</span>
+            <span class="n">seq</span> <span class="o">=</span> <span class="n">reverse_complement</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span>
+    <span class="c"># Deal with hard clipping (code could be cleaner):</span>
+    <span class="c"># Clip 5&#39;:</span>
+    <span class="n">first_op</span> <span class="o">=</span> <span class="n">cigar</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">first_op</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;H&#39;</span><span class="p">:</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">first_op</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]):]</span>
+    <span class="n">last_op</span> <span class="o">=</span> <span class="n">cigar</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c"># Clip 3&#39;:</span>
+    <span class="k">if</span> <span class="n">last_op</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;H&#39;</span><span class="p">:</span>
+        <span class="n">seq</span> <span class="o">=</span> <span class="n">seq</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">last_op</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+
+    <span class="n">sam</span> <span class="o">=</span> <span class="n">sam_writer</span><span class="o">.</span><span class="n">new_sam_record</span><span class="p">(</span><span class="n">qname</span><span class="o">=</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;qName&#39;</span><span class="p">],</span> <span class="n">flag</span><span class="o">=</span><span class="n">flag</span><span class="p">,</span> <span class="n">rname</span><span class="o">=</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;tName&#39;</span><span class="p">],</span> <span class="n">pos</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">psl</span><span class="p">[</span><span class="s">&#39;tStart&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                    <span class="n">mapq</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cigar</span><span class="o">=</span><span class="n">cigar_string</span><span class="p">,</span> <span class="n">rnext</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span> <span class="n">pnext</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">tlen</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">seq</span><span class="o">=</span><span class="n">seq</span><span class="p">,</span> <span class="n">qual</span><span class="o">=</span><span class="s">&#39;*&#39;</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="s">&#39;NM:i:{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">NM</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">sam</span></div>
+
+
+<div class="viewcode-block" id="psl2sam"><a class="viewcode-back" href="../../uncle_PSL.html#uncle_PSL.psl2sam.psl2sam">[docs]</a><span class="k">def</span> <span class="nf">psl2sam</span><span class="p">(</span><span class="n">psl_handle</span><span class="p">,</span> <span class="n">out_handle</span><span class="p">,</span> <span class="n">reads</span><span class="p">,</span> <span class="n">soft_clip</span><span class="o">=</span><span class="k">True</span><span class="p">,</span> <span class="n">n_limit</span><span class="o">=</span><span class="k">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Convert PSL data (BLAT output) into SAM format.</span>
+
+<span class="sd">    :param psl_handle: File handle for reading PSL data.</span>
+<span class="sd">    :param out_handle: File handle to write SAM output.</span>
+<span class="sd">    :param reads: Input reads as dictionary of SeqRecord objects.</span>
+<span class="sd">    :param soft_clip: Soft clip if true.</span>
+<span class="sd">    :param n_limit: Deletion size limit for using N operation.</span>
+<span class="sd">    :returns: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Create SamWriter object:</span>
+    <span class="n">sam_writer</span> <span class="o">=</span> <span class="n">SamWriter</span><span class="p">(</span><span class="n">out_handle</span><span class="p">)</span>
+    <span class="c"># Iterate PSL records:</span>
+    <span class="k">for</span> <span class="n">fields</span> <span class="ow">in</span> <span class="n">_iter_fields</span><span class="p">(</span><span class="n">psl_handle</span><span class="p">):</span>
+        <span class="n">psl_fields</span> <span class="o">=</span> <span class="n">_prepare_psl_dict</span><span class="p">()</span>
+        <span class="c"># Fill PSL structure:</span>
+        <span class="k">for</span> <span class="n">pos</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">psl_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="n">psl_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="n">pos</span><span class="p">]</span>
+        <span class="c"># Convert PSL -&gt; SAM:</span>
+        <span class="n">sam_rec</span> <span class="o">=</span> <span class="n">psl_rec2sam_rec</span><span class="p">(</span><span class="n">psl_fields</span><span class="p">,</span> <span class="n">sam_writer</span><span class="p">,</span> <span class="n">reads</span><span class="p">,</span> <span class="n">soft_clip</span><span class="p">,</span> <span class="n">n_limit</span><span class="p">)</span>
+        <span class="n">sam_writer</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">sam_rec</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Oxford Nanopore Technologies Ltd..
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
