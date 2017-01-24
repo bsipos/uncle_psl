@@ -83,7 +83,8 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     cigar.append("{}M".format(bs))
     # reverse CIGAR if strand is '-' to match BWA behaviour - might not be the right thing to do!:
     if strand == '-':
-        cigar = cigar[::-1]
+        pass
+        #cigar = cigar[::-1]
     # 5' hard clipping:
     if qStart != 0:
         cigar.insert(0,"{}{}".format(qStart, clip_op))
@@ -99,7 +100,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
     # Figure out strand:
     if len(psl['strand']) == 1:
         strand = psl['strand']  # Not sure if this is sane!
-        psl['strand'] = '+' + psl['strand'] # Assume +
+        psl['strand'] = psl['strand'] + '+' # Assume +
     if len(psl['strand']) == 2:
         strand = '+' if all(x == list(psl['strand'])[0] for x in list(psl['strand'])) else '-'
     else:
