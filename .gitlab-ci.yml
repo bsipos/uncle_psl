@@ -11,7 +11,7 @@ before_script:
     - apt-add-repository universe
     - apt-get update
     - apt-get install -y python-pip make python-biopython python-pysam
-    - pip install --upgrade sphinx sphinx-argparse sphinx_rtd_theme pytest pycmd futures packaging
+    - pip install --upgrade sphinx sphinx-argparse sphinx_rtd_theme pytest pycmd futures packaging appdirs
     - pip install -e ./
 
   
