@@ -17,6 +17,8 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     '-f', metavar='reads_fasta', type=str, help="Reads in fasta format.", required=False, default=None)
 parser.add_argument(
+    '-N', metavar='n_limit', type=int, help="Use N CIGAR operation for deletions larger than this parameter (None).", required=False, default=None)
+parser.add_argument(
     '-H', action="store_false", help="Use hard clipping instead of soft clipping.", default=True)
 parser.add_argument('infile', nargs='?', help='Input PSL (default: stdin).',
                     type=argparse.FileType('r'), default=sys.stdin)
@@ -31,4 +33,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     reads =  SeqIO.to_dict(SeqIO.parse(args.f, 'fasta')) if args.f is not None else None
-    psl2sam.psl2sam(args.infile, args.outfile, reads, args.H)
+    psl2sam.psl2sam(args.infile, args.outfile, reads, args.H, args.N)

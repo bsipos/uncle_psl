@@ -48,7 +48,7 @@ def _iter_fields(handle, nr_fields=21):
         yield fields
 
 
-def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip):
+def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip=True, n_limit=None):
     # Construct the CIGAR string, here we go:
     cigar = []
     indels = 0
@@ -73,7 +73,11 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
             cigar.append("{}I".format(insertion))
         # Add deletion:
         if deletion != 0:
-            cigar.append("{}D".format(deletion))
+            del_op = 'D'
+            # Use N operation if deleltion is larger than limit:
+            if (n_limit is not None) and (deletion >= n_limit):
+                del_op = 'N'
+            cigar.append("{}{}".format(deletion, del_op))
         indels += deletion
         indels += insertion
         # NM?
@@ -86,11 +90,10 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
     if three_clip != 0:
         cigar.append("{}{}".format(three_clip, clip_op))
     # CIGAR complete:
-    cigar = ''.join(cigar)
     return cigar, indels
 
 
-def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip):
+def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
     # Figure out strand:
     if len(psl['strand']) != 2:
         raise Exception('Invalid strand field in record: {}'.format(ps['qName']))
@@ -122,28 +125,43 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip):
             tStarts[i] = tSize - blockSizes[i] - tStarts[i]
 
     # Generate CIGAR:
-    cigar, indels = _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip)
+    cigar, indels = _generate_cigar(
+        qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip, n_limit)
+    cigar_string = ''.join(cigar)
     NM = indels + int(psl['misMatches']) + int(psl['nCount'])
 
     # Construct SAM record:
-    flag = 0 if strand == '+' else 16 # Strand flag
+    flag = 0 if strand == '+' else 16  # Strand flag
     # Construct sequence:
     seq = '*'
     if reads is not None and psl['qName'] in reads:
         seq = str(reads[psl['qName']].seq)
         if strand == '-':
             seq = reverse_complement(seq)
-    # Deal with hard clipping:
-    sam = sam_writer.new_sam_record(qname=psl['qName'], flag=flag, rname=psl['tName'], pos=int(psl['tStart'])+1,
-            mapq=0, cigar=cigar, rnext='*', pnext=0, tlen=0, seq=seq, qual='*', tags='NM:i:{}'.format(NM))
+    # Deal with hard clipping (code could be cleaner):
+    # Clip 5':
+    first_op = cigar[0]
+    if first_op[-1] == 'H':
+        seq = seq[int(first_op[:-1]):]
+    last_op = cigar[-1]
+    # Clip 3':
+    if last_op[-1] == 'H':
+        seq = seq[:len(seq) - int(last_op[:-1])]
+
+    sam = sam_writer.new_sam_record(qname=psl['qName'], flag=flag, rname=psl['tName'], pos=int(psl['tStart']) + 1,
+                                    mapq=0, cigar=cigar_string, rnext='*', pnext=0, tlen=0, seq=seq, qual='*', tags='NM:i:{}'.format(NM))
     return sam
 
 
-def psl2sam(psl_handle, out_handle, reads, soft_clip):
+def psl2sam(psl_handle, out_handle, reads, soft_clip=True, n_limit=None):
+    # Create SamWriter object:
     sam_writer = SamWriter(out_handle)
+    # Iterate PSL records:
     for fields in _iter_fields(psl_handle):
         psl_fields = _prepare_psl_dict()
+        # Fill PSL structure:
         for pos, key in enumerate(psl_fields.keys()):
             psl_fields[key] = fields[pos]
-        sam_rec = psl_rec2sam_rec(psl_fields, sam_writer, reads, soft_clip)
+        # Convert PSL -> SAM:
+        sam_rec = psl_rec2sam_rec(psl_fields, sam_writer, reads, soft_clip, n_limit)
         sam_writer.write(sam_rec)
