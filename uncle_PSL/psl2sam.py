@@ -81,10 +81,6 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
         bs, qs, ts = blockSizes[i], qStarts[i], tStarts[i]
     # Add last block:
     cigar.append("{}M".format(bs))
-    # reverse CIGAR if strand is '-' to match BWA behaviour - might not be the right thing to do!:
-    if strand == '-':
-        pass
-        #cigar = cigar[::-1]
     # 5' hard clipping:
     if qStart != 0:
         cigar.insert(0,"{}{}".format(qStart, clip_op))
@@ -94,6 +90,24 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
         cigar.append("{}{}".format(three_clip, clip_op))
     # CIGAR complete:
     return cigar, indels
+
+def _extract_segment_info(psl):
+    # Extract segement information:
+    blockCount = int(psl['blockCount'])
+    blockSizes = [int(bs) for bs in psl['blockSizes'].split(',') if len(bs) > 0]
+    qStarts = [int(qs) for qs in psl['qStarts'].split(',') if len(qs) > 0]
+    tStarts = [int(ts) for ts in psl['tStarts'].split(',') if len(ts) > 0]
+
+    # Reverse and transform segment information if strand is '-':
+    if psl['strand'][1] == '-':
+        blockSizes = blockSizes[::-1]
+        qStarts = qStarts[::-1]
+        tStarts = tStarts[::-1]
+        for i in xrange(blockCount):
+            qStarts[i] = qSize - blockSizes[i] - qStarts[i]
+            tStarts[i] = tSize - blockSizes[i] - tStarts[i]
+
+    return blockCount, blockSizes, qStarts, tStarts
 
 
 def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
@@ -117,19 +131,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
         qEnd = qSize - int(psl['qStart'])
 
     # Extract segement information:
-    blockCount = int(psl['blockCount'])
-    blockSizes = [int(bs) for bs in psl['blockSizes'].split(',') if len(bs) > 0]
-    qStarts = [int(qs) for qs in psl['qStarts'].split(',') if len(qs) > 0]
-    tStarts = [int(ts) for ts in psl['tStarts'].split(',') if len(ts) > 0]
-
-    # Reverse and transform segment information if strand is '-':
-    if psl['strand'][1] == '-':
-        blockSizes = blockSizes[::-1]
-        qStarts = qStarts[::-1]
-        tStarts = tStarts[::-1]
-        for i in xrange(blockCount):
-            qStarts[i] = qSize - blockSizes[i] - qStarts[i]
-            tStarts[i] = tSize - blockSizes[i] - tStarts[i]
+    blockCount, blockSizes, qStarts, tStarts _extract_segment_info(psl)
 
     # Generate CIGAR:
     cigar, indels = _generate_cigar(
