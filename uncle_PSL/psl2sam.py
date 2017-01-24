@@ -131,7 +131,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
         qEnd = qSize - int(psl['qStart'])
 
     # Extract segement information:
-    blockCount, blockSizes, qStarts, tStarts _extract_segment_info(psl)
+    blockCount, blockSizes, qStarts, tStarts = _extract_segment_info(psl)
 
     # Generate CIGAR:
     cigar, indels = _generate_cigar(
