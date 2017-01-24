@@ -7,7 +7,6 @@ import itertools
 import sys
 
 from Bio import SeqIO
-sys.path.append('..')
 
 from uncle_PSL import psl2sam
 
@@ -31,6 +30,5 @@ parser.add_argument('outfile', nargs='?', help='Output SAM (default: stdout)',
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    
     reads =  SeqIO.to_dict(SeqIO.parse(args.f, 'fasta')) if args.f is not None else None
     psl2sam.psl2sam(args.infile, args.outfile, reads, args.H, args.N)
