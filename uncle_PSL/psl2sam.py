@@ -48,15 +48,12 @@ def _iter_fields(handle, nr_fields=21):
         yield fields
 
 
-def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip=True, n_limit=None):
+def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, strand, soft_clip=True, n_limit=None):
     # Construct the CIGAR string, here we go:
     cigar = []
     indels = 0
     clip_op = 'S' if soft_clip else 'H'
 
-    # 5' hard clipping:
-    if qStart != 0:
-        cigar.append("{}{}".format(qStart, clip_op))
     # Process alignment segments:
     bs = blockSizes[0]
     qs = qStarts[0]
@@ -80,11 +77,16 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
             cigar.append("{}{}".format(deletion, del_op))
         indels += deletion
         indels += insertion
-        # NM?
         # Advance to next block:
         bs, qs, ts = blockSizes[i], qStarts[i], tStarts[i]
     # Add last block:
     cigar.append("{}M".format(bs))
+    # reverse CIGAR if strand is '-' to match BWA behaviour - might not be the right thing to do!:
+    if strand == '-':
+        cigar = cigar[::-1]
+    # 5' hard clipping:
+    if qStart != 0:
+        cigar.insert(0,"{}{}".format(qStart, clip_op))
     # Deal with 3' clipping:
     three_clip = qSize - qEnd
     if three_clip != 0:
@@ -95,9 +97,13 @@ def _generate_cigar(qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEn
 
 def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
     # Figure out strand:
-    if len(psl['strand']) != 2:
+    if len(psl['strand']) == 1:
+        strand = psl['strand']  # Not sure if this is sane!
+        psl['strand'] = '+' + psl['strand'] # Assume +
+    if len(psl['strand']) == 2:
+        strand = '+' if all(x == list(psl['strand'])[0] for x in list(psl['strand'])) else '-'
+    else:
         raise Exception('Invalid strand field in record: {}'.format(psl['qName']))
-    strand = '+' if all(x == list(psl['strand'])[0] for x in list(psl['strand'])) else '-'
 
     # Type conversion of coordinates:
     qStart, qEnd = int(psl['qStart']), int(psl['qEnd'])
@@ -126,7 +132,7 @@ def psl_rec2sam_rec(psl, sam_writer, reads, soft_clip, n_limit):
 
     # Generate CIGAR:
     cigar, indels = _generate_cigar(
-        qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, soft_clip, n_limit)
+        qStart, blockSizes, qStarts, tStarts, blockCount, qSize, qEnd, strand, soft_clip, n_limit)
     cigar_string = ''.join(cigar)
     NM = indels + int(psl['misMatches']) + int(psl['nCount'])
 
