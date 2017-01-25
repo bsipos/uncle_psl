@@ -66,8 +66,6 @@ optional arguments:
   -H              Use hard clipping instead of soft clipping.
 ```
 
-API documentation can be found at: 
-
 Credits
 -------
 
@@ -79,4 +77,5 @@ Limitations
 - SAM header is not written, but that can be easily added using [samtools view -T](http://www.htslib.org/doc/samtools.html)
 - The MD flag is not added, but that can be easily done using [samtools calmd](http://www.htslib.org/doc/samtools.html).
 - Mapping qualities are set to zero.
+- Base qualities are not added to the SAM output.
 - The `XS` flag is currently not set. 
