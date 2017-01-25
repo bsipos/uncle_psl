@@ -11,13 +11,13 @@ Installation
 Quick install using pip:
 
 ```
-pip install git+
+pip install git+https://github.com/bsipos/uncle_psl.git
 ```
 
 Or clone the package:
 
 ```
-git clone 
+git clone https://github.com/bsipos/uncle_psl.git
 ```
 
 Install the package:
