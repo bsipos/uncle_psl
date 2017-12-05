@@ -6,6 +6,8 @@
 
 # (c) 2016 Oxford Nanopore Technologies Ltd.
 
+import sys
+
 # Reverse complements of bases, taken from dragonet:
 comp = {
     'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'X': 'X', 'N': 'N',
